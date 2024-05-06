@@ -19,14 +19,25 @@ use DateTime;
  */
 abstract class PendingMessage
 {
-    private int $sendingAttempts = 1;
-    private DateTime $lastSentAt;
+    /**
+     * @var int
+     */
+    private $messageId;
+    /**
+     * @var int
+     */
+    private $sendingAttempts = 1;
+    /**
+     * @var \DateTime
+     */
+    private $lastSentAt;
 
     /**
      * Creates a new pending message object.
      */
-    protected function __construct(private int $messageId, DateTime $sentAt = null)
+    protected function __construct(int $messageId, DateTime $sentAt = null)
     {
+        $this->messageId = $messageId;
         $this->lastSentAt = $sentAt ?? new DateTime();
     }
 

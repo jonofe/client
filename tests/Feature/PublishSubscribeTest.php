@@ -115,7 +115,7 @@ class PublishSubscribeTest extends TestCase
 
         // Because we need to make sure the message reached the broker, we delay the execution for a short period (100ms) intentionally.
         // With higher QoS, this is replaced by awaiting delivery of the message.
-        usleep(100_000);
+        usleep(100000);
 
         // We connect and subscribe to a topic using the second client.
         $connectionSettings = (new ConnectionSettings())

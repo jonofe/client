@@ -78,14 +78,7 @@ interface MessageProcessor
     /**
      * Builds a publish message based on the given parameters.
      */
-    public function buildPublishMessage(
-        string $topic,
-        string $message,
-        int $qualityOfService,
-        bool $retain,
-        ?int $messageId = null,
-        bool $isDuplicate = false,
-    ): string;
+    public function buildPublishMessage(string $topic, string $message, int $qualityOfService, bool $retain, ?int $messageId = null, bool $isDuplicate = false): string;
 
     /**
      * Builds a publish acknowledgement for the given message identifier.

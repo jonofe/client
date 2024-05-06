@@ -11,6 +11,14 @@ namespace PhpMqtt\Client\Exceptions;
  */
 class ConnectingToBrokerFailedException extends MqttClientException
 {
+    /**
+     * @var string|null
+     */
+    private $connectionErrorCode;
+    /**
+     * @var string|null
+     */
+    private $connectionErrorMessage;
     public const EXCEPTION_CONNECTION_FAILED              = 0001;
     public const EXCEPTION_CONNECTION_PROTOCOL_VERSION    = 0002;
     public const EXCEPTION_CONNECTION_IDENTIFIER_REJECTED = 0003;
@@ -23,13 +31,10 @@ class ConnectingToBrokerFailedException extends MqttClientException
     /**
      * ConnectingToBrokerFailedException constructor.
      */
-    public function __construct(
-        int $code,
-        string $error,
-        private ?string $connectionErrorCode = null,
-        private ?string $connectionErrorMessage = null,
-    )
+    public function __construct(int $code, string $error, ?string $connectionErrorCode = null, ?string $connectionErrorMessage = null)
     {
+        $this->connectionErrorCode = $connectionErrorCode;
+        $this->connectionErrorMessage = $connectionErrorMessage;
         parent::__construct(
             sprintf('[%s] Establishing a connection to the MQTT broker failed: %s', $code, $error),
             $code

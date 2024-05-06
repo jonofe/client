@@ -16,22 +16,42 @@ use PhpMqtt\Client\Contracts\MqttClient;
  */
 class Message
 {
-    private ?int $messageId  = null;
-    private ?string $topic   = null;
-    private ?string $content = null;
+    /**
+     * @var \PhpMqtt\Client\MessageType
+     */
+    private $type;
+    /**
+     * @var int
+     */
+    private $qualityOfService = 0;
+    /**
+     * @var bool
+     */
+    private $retained = false;
+    /**
+     * @var int|null
+     */
+    private $messageId;
+    /**
+     * @var string|null
+     */
+    private $topic;
+    /**
+     * @var string|null
+     */
+    private $content;
 
     /** @var int[] */
-    private array $acknowledgedQualityOfServices = [];
+    private $acknowledgedQualityOfServices = [];
 
     /**
      * Message constructor.
      */
-    public function __construct(
-        private MessageType $type,
-        private int $qualityOfService = 0,
-        private bool $retained = false,
-    )
+    public function __construct(MessageType $type, int $qualityOfService = 0, bool $retained = false)
     {
+        $this->type = $type;
+        $this->qualityOfService = $qualityOfService;
+        $this->retained = $retained;
     }
 
     public function getType(): MessageType

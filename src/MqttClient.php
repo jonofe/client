@@ -32,6 +32,14 @@ use Psr\Log\LoggerInterface;
  */
 class MqttClient implements ClientContract
 {
+    /**
+     * @var string
+     */
+    private $host;
+    /**
+     * @var int
+     */
+    private $port = 1883;
     use GeneratesRandomClientIds;
     use OffersHooks;
     use ValidatesConfiguration;
@@ -43,17 +51,50 @@ class MqttClient implements ClientContract
     public const QOS_AT_LEAST_ONCE       = 1;
     public const QOS_EXACTLY_ONCE        = 2;
     public const SOCKET_READ_BUFFER_SIZE = 8192;
-    private string $clientId;
-    private ConnectionSettings $settings;
-    private string $buffer     = '';
-    private bool $connected    = false;
-    private ?float $lastPingAt = null;
-    private MessageProcessor $messageProcessor;
-    private Repository $repository;
-    private LoggerInterface $logger;
-    private bool $interrupted  = false;
-    private int $bytesReceived = 0;
-    private int $bytesSent     = 0;
+    /**
+     * @var string
+     */
+    private $clientId;
+    /**
+     * @var \PhpMqtt\Client\ConnectionSettings
+     */
+    private $settings;
+    /**
+     * @var string
+     */
+    private $buffer     = '';
+    /**
+     * @var bool
+     */
+    private $connected    = false;
+    /**
+     * @var float|null
+     */
+    private $lastPingAt;
+    /**
+     * @var \PhpMqtt\Client\Contracts\MessageProcessor
+     */
+    private $messageProcessor;
+    /**
+     * @var \PhpMqtt\Client\Contracts\Repository
+     */
+    private $repository;
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+    /**
+     * @var bool
+     */
+    private $interrupted  = false;
+    /**
+     * @var int
+     */
+    private $bytesReceived = 0;
+    /**
+     * @var int
+     */
+    private $bytesSent     = 0;
 
     /** @var resource|null */
     protected $socket;
@@ -71,14 +112,16 @@ class MqttClient implements ClientContract
      * @throws ProtocolNotSupportedException
      */
     public function __construct(
-        private string $host,
-        private int $port = 1883,
+        string $host,
+        int $port = 1883,
         ?string $clientId = null,
         string $protocol = self::MQTT_3_1,
         Repository $repository = null,
         LoggerInterface $logger = null
     )
     {
+        $this->host = $host;
+        $this->port = $port;
         if (!in_array($protocol, [self::MQTT_3_1, self::MQTT_3_1_1])) {
             throw new ProtocolNotSupportedException($protocol);
         }
@@ -86,10 +129,14 @@ class MqttClient implements ClientContract
         $this->repository = $repository ?? new MemoryRepository();
         $this->logger     = new Logger($this->host, $this->port, $this->clientId, $logger);
 
-        $this->messageProcessor = match ($protocol) {
-            self::MQTT_3_1_1 => new Mqtt311MessageProcessor($this->clientId, $this->logger),
-            default => new Mqtt31MessageProcessor($this->clientId, $this->logger),
-        };
+        switch ($protocol) {
+            case self::MQTT_3_1_1:
+                $this->messageProcessor = new Mqtt311MessageProcessor($this->clientId, $this->logger);
+                break;
+            default:
+                $this->messageProcessor = new Mqtt31MessageProcessor($this->clientId, $this->logger);
+                break;
+        }
 
         $this->initializeEventHandlers();
     }
@@ -366,7 +413,7 @@ class MqttClient implements ClientContract
 
             // We need to set the global buffer to the remaining data we might already have read.
             $this->buffer = $buffer;
-        } catch (DataTransferException) {
+        } catch (DataTransferException $exception) {
             $this->logger->error('While connecting to the broker, a transfer error occurred.');
             throw new ConnectingToBrokerFailedException(
                 ConnectingToBrokerFailedException::EXCEPTION_CONNECTION_FAILED,
@@ -718,7 +765,7 @@ class MqttClient implements ClientContract
                         $message->getRetained()
                     );
                     $this->repository->addPendingIncomingMessage($pendingMessage);
-                } catch (PendingMessageAlreadyExistsException) {
+                } catch (PendingMessageAlreadyExistsException $exception) {
                     // We already received and processed this message.
                 }
 
@@ -751,7 +798,7 @@ class MqttClient implements ClientContract
         if ($message->getType()->equals(MessageType::PUBLISH_RECEIPT())) {
             try {
                 $result = $this->repository->markPendingOutgoingPublishedMessageAsReceived($message->getMessageId());
-            } catch (PendingMessageNotFoundException) {
+            } catch (PendingMessageNotFoundException $exception) {
                 // This should never happen as we should have received all PUBREC messages before we see the first
                 // PUBCOMP which actually remove the message. So we do this for safety only.
                 $result = false;
@@ -1054,7 +1101,7 @@ class MqttClient implements ClientContract
 
             try {
                 $this->reconnect();
-            } catch (ConnectingToBrokerFailedException) {
+            } catch (ConnectingToBrokerFailedException $exception) {
                 $this->logger->error('Automatically reconnecting to the broker while writing data to the socket failed.');
 
                 // Throw the original exception.
@@ -1123,7 +1170,7 @@ class MqttClient implements ClientContract
 
             try {
                 $this->reconnect();
-            } catch (ConnectingToBrokerFailedException) {
+            } catch (ConnectingToBrokerFailedException $exception) {
                 $this->logger->error('Automatically reconnecting to the broker while reading data from the socket failed.');
 
                 // Throw the original exception.

@@ -11,17 +11,31 @@ namespace PhpMqtt\Client;
  */
 class Subscription
 {
-    private string $regexifiedTopicFilter;
+    /**
+     * @var string
+     */
+    private $topicFilter;
+    /**
+     * @var int
+     */
+    private $qualityOfService = 0;
+    /**
+     * @var \Closure|null
+     */
+    private $callback;
+    /**
+     * @var string
+     */
+    private $regexifiedTopicFilter;
 
     /**
      * Creates a new subscription object.
      */
-    public function __construct(
-        private string $topicFilter,
-        private int $qualityOfService = 0,
-        private ?\Closure $callback = null,
-    )
+    public function __construct(string $topicFilter, int $qualityOfService = 0, ?\Closure $callback = null)
     {
+        $this->topicFilter = $topicFilter;
+        $this->qualityOfService = $qualityOfService;
+        $this->callback = $callback;
         $this->regexifyTopicFilter();
     }
 
@@ -36,7 +50,7 @@ class Subscription
         // from the topic filter. To do so, we look for the $share keyword and then try to find the second topic separator to
         // calculate the substring containing the actual topic filter.
         // Note: shared subscriptions always have the form: $share/<group>/<topic>
-        if (str_starts_with($topicFilter, '$share/') && ($separatorIndex = strpos($topicFilter, '/', 7)) !== false) {
+        if (strncmp($topicFilter, '$share/', strlen('$share/')) === 0 && ($separatorIndex = strpos($topicFilter, '/', 7)) !== false) {
             $topicFilter = substr($topicFilter, $separatorIndex + 1);
         }
 

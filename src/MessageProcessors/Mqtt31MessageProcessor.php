@@ -21,10 +21,15 @@ use Psr\Log\LoggerInterface;
 class Mqtt31MessageProcessor extends BaseMessageProcessor implements MessageProcessor
 {
     /**
+     * @var string
+     */
+    private $clientId;
+    /**
      * Creates a new message processor instance which supports version 3.1 of the MQTT protocol.
      */
-    public function __construct(private string $clientId, LoggerInterface $logger)
+    public function __construct(string $clientId, LoggerInterface $logger)
     {
+        $this->clientId = $clientId;
         parent::__construct($logger);
     }
 
@@ -323,27 +328,17 @@ class Mqtt31MessageProcessor extends BaseMessageProcessor implements MessageProc
     /**
      * {@inheritDoc}
      */
-    public function buildPublishMessage(
-        string $topic,
-        string $message,
-        int $qualityOfService,
-        bool $retain,
-        int $messageId = null,
-        bool $isDuplicate = false,
-    ): string
+    public function buildPublishMessage(string $topic, string $message, int $qualityOfService, bool $retain, int $messageId = null, bool $isDuplicate = false): string
     {
         // Encode the topic as length prefixed string.
         $buffer = $this->buildLengthPrefixedString($topic);
-
         // Encode the message id, if given. It always consists of two bytes.
         if ($messageId !== null)
         {
             $buffer .= $this->encodeMessageId($messageId);
         }
-
         // Add the message without encoding.
         $buffer .= $message;
-
         // Encode the command with supported flags.
         $command = 0x30;
         if ($retain) {
@@ -355,10 +350,8 @@ class Mqtt31MessageProcessor extends BaseMessageProcessor implements MessageProc
         if ($qualityOfService > self::QOS_AT_MOST_ONCE && $isDuplicate) {
             $command += 1 << 3;
         }
-
         // Build the header from the command and the encoded message length.
         $header = chr($command) . $this->encodeMessageLength(strlen($buffer));
-
         return $header . $buffer;
     }
 

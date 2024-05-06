@@ -16,19 +16,33 @@ use Psr\Log\LogLevel;
 class Logger implements LoggerInterface
 {
     /**
+     * @var string
+     */
+    private $host;
+    /**
+     * @var int
+     */
+    private $port;
+    /**
+     * @var string
+     */
+    private $clientId;
+    /**
+     * @var LoggerInterface|null
+     */
+    private $logger;
+    /**
      * Logger constructor.
      *
      * @param LoggerInterface|null $logger
      */
-    public function __construct(
-        private string $host,
-        private int $port,
-        private string $clientId,
-        private ?LoggerInterface $logger = null,
-    )
+    public function __construct(string $host, int $port, string $clientId, ?LoggerInterface $logger = null)
     {
+        $this->host = $host;
+        $this->port = $port;
+        $this->clientId = $clientId;
+        $this->logger = $logger;
     }
-
     /**
      * System is unusable.
      *

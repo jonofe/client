@@ -16,6 +16,10 @@ use Psr\Log\LoggerInterface;
  */
 abstract class BaseMessageProcessor
 {
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
     use TranscodesData;
     use WorksWithBuffers;
 
@@ -26,7 +30,8 @@ abstract class BaseMessageProcessor
     /**
      * BaseMessageProcessor constructor.
      */
-    public function __construct(protected LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger)
     {
+        $this->logger = $logger;
     }
 }
